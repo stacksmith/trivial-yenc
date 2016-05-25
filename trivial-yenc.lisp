@@ -57,11 +57,29 @@
   (loop
      while (decode-line in out)))
 
-(defun header (in)
+(defun header (in magic)
+  "read parameter line starting with magic string, return an alist"
   (let ((result (split-sequence:split-sequence
 		   #\SPACE (bytes-to-string (read-bytes in)))))
-      (and (string= (first result) "=ybegin")
+      (and (string= (first result) magic)
 	   (map 'list #'param-to-pair (cdr  result)))))
+;; =============================================================================
+(defun decode-part (in path)
+  (let* ((line1 (header in "=ybegin"))
+	 (part (cdr (assoc "part" line1 :test #'string=)))
+	 (name (cdr (assoc "name" line1 :test #'string=)))
+	 )
+    (with-open-file (out (merge-pathnames path name )
+			 :element-type '(unsigned-byte 8)
+			 :direction :output
+			 :if-does-not-exist :create
+			 :if-exists :overwrite)
+      (when part
+	(let* ((line2 (header in "=ypart"))
+	      (begin (cdr (assoc "")))))
+	   )
+     )) 
+)
 
 (defun test1 ()
   "decode two-roads.yenc into two-roads.out; load the output file and print to screen."
@@ -73,8 +91,17 @@
 			 :if-does-not-exist :create
 			 :if-exists :supersede)
      
-      (and (header in)
+      (and (prog1 (print (header in "=ybegin")) (terpri))
 	   (decode-lines in  out))))
+  (with-open-file (in (asdf:system-relative-pathname 'trivial-yenc "test/two-roads.out" ))
+    (loop for line = (read-line in nil)
+       while line do (format t "~a~%" line))))
+
+(defun test2 ()
+  "decode two-roads.yenc into two-roads.out; load the output file and print to screen."
+  (with-open-file (in  (asdf:system-relative-pathname 'trivial-yenc "test/yenc2/00000020.ntx" )
+		       :element-type '(unsigned-byte 8))
+)
   (with-open-file (in (asdf:system-relative-pathname 'trivial-yenc "test/two-roads.out" ))
     (loop for line = (read-line in nil)
          while line do (format t "~a~%" line))))
