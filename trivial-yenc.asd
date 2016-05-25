@@ -2,7 +2,7 @@
 
 (asdf:defsystem #:trivial-yenc
   :description "Decode yenc file to a binary file"
-  :author "Stacksmith <stack@apple2.x10.mx>"
+  :author "Stacksmith <fpgasm@apple2.x10.mx>"
   :license "MIT"
   :depends on (#:split-sequence)
   :serial t
