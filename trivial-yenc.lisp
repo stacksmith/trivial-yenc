@@ -45,15 +45,11 @@
 	  (or ival (second l)))))
 
 ;; =============================================================================
+(defvar =yend (map 'vector #'char-code "=yend"))
 (defun decode-line (in out)
+  "decode a line of encoded data from in and output to out"
   (let ((vec (bytes-to-vec (read-bytes in) )))
-    
-    (if (and vec
-	     (eq (elt vec 0) (char-code #\=))
-	     (eq (elt vec 1) (char-code #\y))
-	     (eq (elt vec 2) (char-code #\e))
-	     (eq (elt vec 3) (char-code #\n))
-	     (eq (elt vec 4) (char-code #\d)))
+     (if (every #'= =yend vec) 
 	nil
 	(decode-data vec out)))
 )
@@ -68,14 +64,17 @@
 	   (map 'list #'param-to-pair (cdr  result)))))
 
 (defun test1 ()
-  (with-open-file (in  (asdf:system-relative-pathname 'trivial-yenc "test/test.001" ):element-type '(unsigned-byte 8))
+  "decode two-roads.yenc into two-roads.out; load the output file and print to screen."
+  (with-open-file (in  (asdf:system-relative-pathname 'trivial-yenc "test/two-roads.ync" ):element-type '(unsigned-byte 8))
     (with-open-file (out (asdf:system-relative-pathname 'trivial-yenc
-							"test/test.out" )
+							"test/two-roads.out" )
 			 :element-type '(unsigned-byte 8)
 			 :direction :output
 			 :if-does-not-exist :create
 			 :if-exists :supersede)
-      
+     
       (and (header in)
-	   (decode-lines in  out)))
-    nil ))
+	   (decode-lines in  out))))
+  (with-open-file (in (asdf:system-relative-pathname 'trivial-yenc "test/two-roads.out" ))
+    (loop for line = (read-line in nil)
+         while line do (format t "~a~%" line)))))
