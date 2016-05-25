@@ -1,6 +1,6 @@
 ;;;; package.lisp
 
 (defpackage #:trivial-yenc
-  (:use #:cl)
+  (:use #:cl #:split-sequence)
   )
 

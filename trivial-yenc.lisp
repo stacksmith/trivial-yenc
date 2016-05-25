@@ -23,7 +23,7 @@
 
 ;;------------------------------------------------------------------
 
-(defun read-line-of-bytes (in)
+(defun read-bytes (in)
   (loop for b = (read-byte in)
      until (eq b 10)
      collect b))
