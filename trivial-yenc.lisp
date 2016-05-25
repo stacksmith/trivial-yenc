@@ -2,7 +2,10 @@
 
 (in-package #:trivial-yenc)
 ;; =============================================================================
-;;
+;; code vector version of =yend for checking
+(defvar =yend (map 'vector #'char-code "=yend"))
+;; =ybegin is not needed - we process first line as a string
+;; =============================================================================
 ;;
 (defun decode-data (vec out)
   (let ((esc nil))
@@ -21,13 +24,11 @@
 ;;------------------------------------------------------------------
 
 (defun read-line-of-bytes (in)
-  (loop
-     with b = nil
-     do
-       (setf b (read-byte in))
+  (loop for b = (read-byte in)
      until (eq b 10)
-     collect b)
-  )
+     collect b))
+
+
 (defun bytes-to-string (line)
   "convert vector of bytes to a string"
   (map 'string #'code-char line))
@@ -45,7 +46,6 @@
 	  (or ival (second l)))))
 
 ;; =============================================================================
-(defvar =yend (map 'vector #'char-code "=yend"))
 (defun decode-line (in out)
   "decode a line of encoded data from in and output to out"
   (let ((vec (bytes-to-vec (read-bytes in) )))
@@ -77,4 +77,4 @@
 	   (decode-lines in  out))))
   (with-open-file (in (asdf:system-relative-pathname 'trivial-yenc "test/two-roads.out" ))
     (loop for line = (read-line in nil)
-         while line do (format t "~a~%" line)))))
+         while line do (format t "~a~%" line))))
