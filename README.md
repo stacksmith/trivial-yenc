@@ -3,7 +3,7 @@ Common lisp tools for decoding yenc files.  It uses split-sequence.
 
 (ql:quickload :trivial-yenc)
 
-(decode-part instream directory) => part number or nil
+(trivial-yenc:decode-part instream directory) => part number or nil
 
 instream is a binary input stream (:element-type '(unsigned-byte 8))
 a
