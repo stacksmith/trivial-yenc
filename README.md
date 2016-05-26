@@ -33,3 +33,8 @@ With enough information, it yydecodes the data that follows and writes it to a f
 See:
 * http://www.yenc.org
 
+Todo:
+* general cleanup
+* handle crc
+* check part size
+* return mutivalue status, part, ofparts, filename, etc...
