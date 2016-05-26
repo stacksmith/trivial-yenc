@@ -2,6 +2,19 @@
 Common lisp tools for decoding yenc files.  It uses split-sequence.
 
 (ql:quickload :trivial-yenc)
+
+(decode-part instream directory)
+
+instream is a binary input stream (:element-type '(unsigned-byte 8))/
+
+directory is a path prefix for the output file
+
+See examples test1 and test2.
+
+test1 opens a yenc file (two roads), decodes and displays the poem from the file.
+
+test2 decodes a multi-part binary, joystick.jpg.
+
 ```common-lisp
 (defun test2 ()
   "decode multipart messages to create joystick.jpg"
