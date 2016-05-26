@@ -5,7 +5,7 @@ Common lisp tools for decoding yenc files.  It uses split-sequence.
 
 (decode-part instream directory)
 
-instream is a binary input stream (:element-type '(unsigned-byte 8))/
+instream is a binary input stream (:element-type '(unsigned-byte 8))
 
 directory is a path prefix for the output file
 
