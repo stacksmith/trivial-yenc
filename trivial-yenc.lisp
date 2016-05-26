@@ -67,6 +67,7 @@
 	   (map 'list #'param-to-pair (cdr  result)))))
 ;; =============================================================================
 (defun decode-part (in path)
+  "decode stream in and write file in path directory.  Return part number or nil"
   ;;skip message headers
   (let* ((line1 (loop for h = (header in "=ybegin")
 		   until h
@@ -96,24 +97,28 @@
     part))
 
 (defun test1 ()
-  "decode two-roads.yenc into two-roads.out; load the output file and print to screen.")
-(with-open-file (in  (asdf:system-relative-pathname 'trivial-yenc "test/two-roads.ync" ):element-type '(unsigned-byte 8))
-  (with-open-file (out (asdf:system-relative-pathname 'trivial-yenc
-						      "test/two-roads.out" )
-		       :element-type '(unsigned-byte 8)
-		       :direction :output
-		       :if-does-not-exist :create
-		       :if-exists :supersede)
-    
-    (and (prog1 (print (header in "=ybegin")) (terpri))
-	 (decode-lines in  out))))
+  "decode two-roads.yenc into two-roads.out; load the output file and print to screen."
+  (with-open-file (in  (asdf:system-relative-pathname 'trivial-yenc "test/two-roads.ync" ):element-type '(unsigned-byte 8))
+    (with-open-file (out (asdf:system-relative-pathname 'trivial-yenc
+							"test/two-roads.out" )
+			 :element-type '(unsigned-byte 8)
+			 :direction :output
+			 :if-does-not-exist :create
+			 :if-exists :supersede)
+      
+      (and (prog1 (print (header in "=ybegin")) (terpri))
+	   (print (decode-lines in  out)))))
+  (with-open-file (in  (asdf:system-relative-pathname 'trivial-yenc "test/two-roads.out" ))
+    (loop for line = (read-line in nil)
+         while line do (format t "~a~%" line))))
 
 
 (defun test2 ()
   "decode two-roads.yenc into two-roads.out; load the output file and print to screen."
   (with-open-file (in  (asdf:system-relative-pathname 'trivial-yenc "test/yenc2/00000020.ntx" )
 		       :element-type '(unsigned-byte 8))
-   (decode-part in (asdf:system-relative-pathname 'trivial-yenc "test/yenc2/")))
+      (decode-part in (asdf:system-relative-pathname 'trivial-yenc "test/yenc2/")))
   (with-open-file (in  (asdf:system-relative-pathname 'trivial-yenc "test/yenc2/00000021.ntx" )
 		       :element-type '(unsigned-byte 8))
-   (decode-part in (asdf:system-relative-pathname 'trivial-yenc "test/yenc2/")))   )
+    (decode-part in (asdf:system-relative-pathname 'trivial-yenc "test/yenc2/")   
+		   )))
