@@ -8,17 +8,20 @@
 ;; =============================================================================
 ;;
 (defun decode-data (vec out)
+  (print vec)
   (let ((esc nil))
-    (loop for c across vec do
+    (loop for c across vec do	 
 	 (if esc
 	     (progn
 	       (setf esc nil)
-	       (write-byte (ldb (byte 8 0) (- c 64)) out))
+	       (write-byte (ldb (byte 8 0) (- c 64 42)) out))
 	     (if (eq (char-code #\=) c)
 		 (setf esc T)
-		 (write-byte (ldb (byte 8 0) (- c 42)) out)
-		 ))))
-  t)
+		 (unless (or (eq c 10 )
+			     (eq c 13 ))
+		   (write-byte (ldb (byte 8 0) (- c 42)) out))
+		 )))
+  t))
 
 
 ;;------------------------------------------------------------------
@@ -31,8 +34,8 @@
 
 (defun bytes-to-string (line)
   "convert vector of bytes to a string"
-  (map 'string #'code-char line))
-
+  (string-right-trim '(#\SPACE #\TAB #\NEWLINE #\CR)
+		     (map 'string #'code-char line)))
 (defun bytes-to-vec (line)
     "convert vector of bytes to a string"
   (map 'vector #'identity line)
@@ -65,43 +68,52 @@
 	   (map 'list #'param-to-pair (cdr  result)))))
 ;; =============================================================================
 (defun decode-part (in path)
-  (let* ((line1 (header in "=ybegin"))
+  ;;skip message headers
+  (let* ((line1 (loop for h = (header in "=ybegin")
+		   until h
+		   finally (return h)))
 	 (part (cdr (assoc "part" line1 :test #'string=)))
 	 (name (cdr (assoc "name" line1 :test #'string=)))
-	 )
+	 (begin 0)) ;for single-part messages
+    
+    (when part
+      (let ((line2 (header in "=ypart")))
+	(setf begin (1- (cdr (assoc "begin" line2 :test #'string=))))
+	(print (assoc "end" line2 :test #'string=))
+	))
+    (format t "name is [~A]~%"  (merge-pathnames path name ) )
     (with-open-file (out (merge-pathnames path name )
-			 :element-type '(unsigned-byte 8)
-			 :direction :output
-			 :if-does-not-exist :create
-			 :if-exists :overwrite)
-      (when part
-	(let* ((line2 (header in "=ypart"))
-	      (begin (cdr (assoc "")))))
-	   )
-     )) 
-)
+			   :element-type '(unsigned-byte 8)
+			   :direction :output
+			   :if-does-not-exist :create
+			   :if-exists :overwrite)
+	
+	(file-position out begin)
+	(format t "Will write file \"~A\" at location ~A~%" name begin)
+
+	(decode-lines in  out)
+	))
+  )
 
 (defun test1 ()
-  "decode two-roads.yenc into two-roads.out; load the output file and print to screen."
-  (with-open-file (in  (asdf:system-relative-pathname 'trivial-yenc "test/two-roads.ync" ):element-type '(unsigned-byte 8))
-    (with-open-file (out (asdf:system-relative-pathname 'trivial-yenc
-							"test/two-roads.out" )
-			 :element-type '(unsigned-byte 8)
-			 :direction :output
-			 :if-does-not-exist :create
-			 :if-exists :supersede)
-     
-      (and (prog1 (print (header in "=ybegin")) (terpri))
-	   (decode-lines in  out))))
-  (with-open-file (in (asdf:system-relative-pathname 'trivial-yenc "test/two-roads.out" ))
-    (loop for line = (read-line in nil)
-       while line do (format t "~a~%" line))))
+  "decode two-roads.yenc into two-roads.out; load the output file and print to screen.")
+(with-open-file (in  (asdf:system-relative-pathname 'trivial-yenc "test/two-roads.ync" ):element-type '(unsigned-byte 8))
+  (with-open-file (out (asdf:system-relative-pathname 'trivial-yenc
+						      "test/two-roads.out" )
+		       :element-type '(unsigned-byte 8)
+		       :direction :output
+		       :if-does-not-exist :create
+		       :if-exists :supersede)
+    
+    (and (prog1 (print (header in "=ybegin")) (terpri))
+	 (decode-lines in  out))))
+
 
 (defun test2 ()
   "decode two-roads.yenc into two-roads.out; load the output file and print to screen."
   (with-open-file (in  (asdf:system-relative-pathname 'trivial-yenc "test/yenc2/00000020.ntx" )
 		       :element-type '(unsigned-byte 8))
-)
-  (with-open-file (in (asdf:system-relative-pathname 'trivial-yenc "test/two-roads.out" ))
-    (loop for line = (read-line in nil)
-         while line do (format t "~a~%" line))))
+    (decode-part in (asdf:system-relative-pathname 'trivial-yenc "test/yenc2/")))
+  (with-open-file (in  (asdf:system-relative-pathname 'trivial-yenc "test/yenc2/00000021.ntx" )
+		       :element-type '(unsigned-byte 8))
+   (decode-part in (asdf:system-relative-pathname 'trivial-yenc "test/yenc2/")))   )
