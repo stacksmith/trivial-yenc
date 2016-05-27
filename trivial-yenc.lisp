@@ -7,20 +7,23 @@
 ;; =ybegin is not needed - we process first line as a string
 ;; =============================================================================
 ;;
+
 (defun decode-data (vec out)
+  "decode bytes in vec into out stream"
   (let ((esc nil))
-    (loop for c across vec do	 
-	 (if esc
-	     (progn
-	       (setf esc nil)
-	       (write-byte (ldb (byte 8 0) (- c 106)) out))
-	     (if (eq (char-code #\=) c)
-		 (setf esc T)
-		 (unless (or (eq c 10 )
-			     (eq c 13 ))
-		   (write-byte (ldb (byte 8 0) (- c 42)) out))
-		 )))
-  t))
+    (labels ((decode-byte (c)
+	       (if esc
+		   (progn
+		     (setf esc nil)
+		     (write-byte (ldb (byte 8 0) (- c 106)) out)
+		     t)
+		   (if (eq (char-code #\=) c)
+		       (setf esc T)
+		       (unless (or (eq c 10 )
+				   (eq c 13 ))
+			 (write-byte (ldb (byte 8 0) (- c 42)) out))))
+	       t)) ;without this, every will stop.
+      (every #'decode-byte vec))))
 
 
 ;;------------------------------------------------------------------
@@ -37,8 +40,8 @@
 		     (map 'string #'code-char line)))
 (defun bytes-to-vec (line)
     "convert vector of bytes to a string"
-  (map 'vector #'identity line)
-  )
+    (map 'vector #'identity line))
+
 (defun param-to-pair (param)
   "convert string x=y to (x . y), converting y to a number if possible"
   (let* ((l (split-sequence #\= param))
