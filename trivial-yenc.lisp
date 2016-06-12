@@ -117,7 +117,7 @@
 
 
 (defun test2 ()
-  "decode two-roads.yenc into two-roads.out; load the output file and print to screen."
+  "decode a multi-part binary from two files."
   (with-open-file (in  (asdf:system-relative-pathname 'trivial-yenc "test/yenc2/00000020.ntx" )
 		       :element-type '(unsigned-byte 8))
       (decode-part in (asdf:system-relative-pathname 'trivial-yenc "test/yenc2/")))
