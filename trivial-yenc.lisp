@@ -62,17 +62,42 @@
   (loop
      while (decode-line in out)))
 
-(defun header (in magic)
-  "read parameter line starting with magic string, return an alist"
+
+;; This is rather bogus, and relies on single spaces!  Total crap!  Fail!
+(defun header-prim (str start end)
+  "parse a simple header consisting of pure name=value pairs"
   (let ((result (split-sequence:split-sequence
-		   #\SPACE (bytes-to-string (read-bytes in)))))
-      (and (string= (first result) magic)
-	   (map 'list #'param-to-pair (cdr  result)))))
+		 #\SPACE str :start start :end end )))
+    (map 'list #'param-to-pair result)))
+
+(defun header-ybegin- (str)
+  "read a parameter line starting with =ybegin; return an alist."
+  ;; in real live the name parameter can contain spaces, so parse it separately
+  (and (> (length str) 7)
+       (string= "=ybegin" str :end2 7)
+       (let* ((end (search " name=" str)) ;; a little bogus, isn't it?
+	      (result (header-prim str 8 end))) ;8 beign past ybegin...
+	 (cons (cons "name" (subseq str (+ 6 end))) ;(length " name="
+	       result))))
+
+(defun header-ybegin (in)
+  (let ((str (bytes-to-string (read-bytes in))  ))
+    (header-ybegin- str)))
+
+(defun header-ypart- (str)
+  (and (> (length str) 6)
+       (string= "=ypart" str :end2 6)
+       (header-prim str 7 (length str))))
+
+(defun header-ypart (in)
+  (let ((str (bytes-to-string (read-bytes in))  ))
+    (header-ypart- str)))
+
 ;; =============================================================================
 (defun decode-part (in path)
   "decode stream in and write file in path directory.  Return part number or nil"
   ;;skip message headers
-  (let* ((line1 (loop for h = (header in "=ybegin")
+  (let* ((line1 (loop for h = (header-ybegin in)
 		   until h
 		   finally (return h)))
 	 (part (cdr (assoc "part" line1 :test #'string=)))
@@ -80,7 +105,8 @@
 	 (begin 0)) ;for single-part messages
 ;    (print line1)
     (when part
-      (let ((line2 (header in "=ypart")))
+     
+      (let ((line2 (header-ypart in)))
 	(setf begin (1- (cdr (assoc "begin" line2 :test #'string=))))
 ;	(print line2)
 	;(print (assoc "end" line2 :test #'string=))
